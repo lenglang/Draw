@@ -74,7 +74,15 @@
 			_arrow.y = stage.mouseY;
 			_movePoint.x = stage.mouseX;
 			_movePoint.y = stage.mouseY;
-			if (getDistance(_movePoint, _lastPoint) < 10&&Math.abs(getAngle(_lastPoint,_clickPoint)-getAngle(_lastPoint,_movePoint))<60)
+			if (getAngle(getCenter(_points),_clickPoint) > 0 && getAngle(_movePoint,_clickPoint ) < 0)
+			{
+				return;
+			}
+			if (getAngle(getCenter(_points),_clickPoint) <0 && getAngle(_movePoint,_clickPoint) > 0)
+			{
+				return;
+			}
+			if (getDistance(_movePoint, _lastPoint) < 10)
 			{
 				return;
 			}
@@ -101,7 +109,7 @@
 				//折线
 				var p1:Point = new Point(_symmetryLength,_K * _symmetryLength + _b);
 				var p2:Point = new Point( -  _symmetryLength, -  _K * _symmetryLength + _b);
-				//drawLine(p1, p2, 0x00CC00);
+				drawLine(p1, p2, 0x00CC00);
 				//是可以映射
 				var symmetryPoints:Array = [];
 				var lessPoints:Array = [];
@@ -167,7 +175,6 @@
 		private function stageMouseDown(e:MouseEvent):void
 		{
 			_firstBoolean = false;
-			//_sprite.graphics.moveTo(stage.mouseX, stage.mouseY);
 			_movePoint = new Point(stage.mouseX,stage.mouseY);
 			_lastPoint = new Point(stage.mouseX,stage.mouseY);
 			_clickPoint = new Point(stage.mouseX,stage.mouseY);
@@ -281,13 +288,7 @@
 		{
 			//重心点
 			var center:Point = new Point();
-			for (var i:int = 0; i < points.length; i++)
-			{
-				center.x +=  points[i].x;
-				center.y +=  points[i].y;
-			}
-			center.x = center.x / points.length;
-			center.y = center.y / points.length;
+			center = getCenter(points);
 			var boolean:Boolean = true;
 			while (boolean)
 			{
@@ -303,6 +304,22 @@
 					}
 				}
 			}
+		}
+		/**
+		 * 获取重心
+		 * @return
+		 */
+		private function getCenter(points:Array):Point
+		{
+			var center:Point = new Point();
+			for (var i:int = 0; i < points.length; i++)
+			{
+				center.x +=  points[i].x;
+				center.y +=  points[i].y;
+			}
+			center.x = center.x / points.length;
+			center.y = center.y / points.length;
+			return center;
 		}
 		/**
 		 * 获取折线与线段的交点
