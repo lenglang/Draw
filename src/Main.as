@@ -213,7 +213,101 @@
 				//this.setChildIndex(drawGraphics(tempPoints, 0x000000, 0xffffff),this.numChildren-1);
 				//this.setChildIndex(drawGraphics(focusPoints, 0xff0000, 0xffffff),this.numChildren-1);
 			}
-		}	
+		}
+		
+		private function countDraw(points:Array)
+		{
+				var symmetryPoints:Array = [];
+				var lessPoints:Array = [];
+				for (var i:int = 0; i < points.length; i++)
+				{
+					
+                    
+				if (_clickPoint.y < _movePoint.y)
+						{
+							//下移
+							if (points[i].y > points[i].x * _K + _b)
+							{
+								lessPoints.push(_points[i][m]);
+							}
+							else
+							{
+								_firstBoolean = true;
+								if (symmetryPoints.indexOf(getSymmetry(_points[i][m]))==-1)
+								{
+									symmetryPoints.push(getSymmetry(_points[i][m]));
+								}
+							}
+						}
+						else
+						{
+							//上移
+							if (_points[i][m].y < _points[i][m].x * _K + _b)
+							{
+								lessPoints.push(_points[i][m]);
+							}
+							else
+							{
+								_firstBoolean = true;
+								if (symmetryPoints.indexOf(getSymmetry(_points[i][m]))==-1)
+								{
+									symmetryPoints.push(getSymmetry(_points[i][m]));
+								}
+							}
+						}
+				}
+				//是否有交点
+				var allFocusPoints:Array = [];
+				for (var k:int = 0; k < _points.length; k++)
+				{
+					var focusPoints:Array = [];
+					for (var n:int = 0; n < _points[k].length; n++)
+					{
+						var focus:Point;
+						if (n == _points[k].length - 1)
+						{
+							focus = getFocus(_points[k][n], _points[k][0]);
+						}
+						else
+						{
+							focus = getFocus(_points[k][n],_points[k][n + 1]);
+						}
+						if (focus != null)
+						{
+							focusPoints.push(focus);
+						}
+					}
+					allFocusPoints.push(focusPoints);
+				}
+				_newPoints = [];
+				for (var r:int = 0; r < allLessPoints.length; r++) 
+				{
+					var arr1:Array = [];
+					arr1 = arr1.concat(allLessPoints[r]);
+					arr1 = arr1.concat(allFocusPoints[r]);
+					sortPoint(arr1);
+					_newPoints.push(arr1);
+				}
+				var arr2:Array = [];
+				for (var s:int = 0; s < allFocusPoints.length; s++) 
+				{
+					arr2 = arr2.concat(allFocusPoints[s]);
+				}
+				
+				arr2 = arr2.concat(symmetryPoints);
+				sortPoint(arr2);
+				_newPoints.push(arr2);
+				var colorArr:Array = [0x000000, 0xff0000,0xff0000,0xff0000,0xff0000,0xff0000,0xff0000,0xff0000];
+				for (var t:int = 0; t < _newPoints.length; t++) 
+				{
+					this.setChildIndex(drawGraphics(_newPoints[t], colorArr[t], 0xffffff),this.numChildren-1);
+				}
+		}
+		
+		
+		
+		
+		
 		private function stageMouseDown(e:MouseEvent):void
 		{
 			_firstBoolean = false;
