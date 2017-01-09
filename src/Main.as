@@ -52,10 +52,10 @@
 			//初始纸张
 			drawGraphics(_points[0], 0x000000, 0xffffff);
 			//生成箭头
-			_arrow = new Arrow();
-			_arrow.x = stage.mouseX;
-			_arrow.y = stage.mouseY;
-			addChild(_arrow);
+			//_arrow = new Arrow();
+			//_arrow.x = stage.mouseX;
+			//_arrow.y = stage.mouseY;
+			//addChild(_arrow);
 			//添加事件
 			stage.addEventListener(MouseEvent.MOUSE_DOWN, stageMouseDown);
 			stage.addEventListener(MouseEvent.MOUSE_UP, stageMouseUp);
@@ -70,11 +70,11 @@
 		//移动
 		private function stageMouseMove(e:MouseEvent):void
 		{
-			_arrow.x = stage.mouseX;
-			_arrow.y = stage.mouseY;
+			//_arrow.x = stage.mouseX;
+			//_arrow.y = stage.mouseY;
 			_movePoint.x = stage.mouseX;
 			_movePoint.y = stage.mouseY;
-			if (getDistance(_movePoint, _lastPoint) < 10)
+			if (getDistance(_movePoint, _lastPoint) < 0)
 			{
 				return;
 			}
@@ -90,10 +90,11 @@
 				}
 				_sprites = [];
 				_angle = getAngle(_clickPoint,_movePoint);
-				_arrow.rotation = _angle;
+				//_arrow.rotation = _angle;
 				if (_firstBoolean == false)
 				{
 					_earlyPoint = getEarlyPoint();
+					_firstBoolean = true;
 				}
 				if (_angle == 90)
 				{
@@ -103,17 +104,35 @@
 				{
 					_angle = 180.001;
 				}
+				else if (_angle == -180)
+				{
+					_angle = -180.001;
+				}
 				else if (_angle == 0)
 				{
-					_angle = 0.001;
+					
+				}
+				if (_angle == -90)
+				{
+					_angle = -90.001;
 				}
 				var radian = (_angle - 90) * Math.PI / 180;
 				_K = Math.tan(radian);
-				_b = (_earlyPoint.y+_movePoint.y)/2 - (_K * (_movePoint.x+_earlyPoint.x)/2);
+				//之前是以最近的点最为参照
+				_b = (_clickPoint.y + _movePoint.y) / 2 - (_K * (_movePoint.x + _clickPoint.x) / 2);
 				//折线
 				var p1:Point = new Point(_symmetryLength,_K * _symmetryLength + _b);
 				var p2:Point = new Point( -  _symmetryLength, -  _K * _symmetryLength + _b);
-				//drawLine(p1, p2, 0x00CC00);
+				if (_angle == 0)
+				{
+					p1.x =(_clickPoint.x + _movePoint.x) / 2;
+					p1.y = _symmetryLength;
+					
+					p2.x = (_clickPoint.x + _movePoint.x) / 2;
+					p2.y = -_symmetryLength;
+					
+				}
+				drawLine(p1, p2, 0x00CC00);
 				//是可以映射
 				_newPoints = [];
 				for (var l:int = _points.length-1; l >=0; l--)
@@ -131,6 +150,10 @@
 					{
 						color = 0xff0000;
 					}
+					if (_newPoints.length == 1)
+					{
+						color = 0x000000;
+					}
 					this.setChildIndex(drawGraphics(_newPoints[w], color, 0xffffff),this.numChildren-1);
 				}
 			}
@@ -145,7 +168,20 @@
 			var lessPoints:Array = [];
 			for (var i:int = 0; i < points.length; i++)
 			{
-
+				if (_angle == 0)
+				{
+					//右移
+					if (_clickPoint.x < _movePoint.x&&points[i].x<(_clickPoint.x+_movePoint.x)/2)
+					{
+						
+						symmetryPoints.push(getSymmetry(points[i]));
+					}
+					//左移
+					else if (_clickPoint.x > _movePoint.x&&points[i].x>(_clickPoint.x+_movePoint.x)/2)
+					{symmetryPoints.push(getSymmetry(points[i]));}
+					else{lessPoints.push(points[i]);}
+					continue;
+				}
 
 				if (_clickPoint.y < _movePoint.y)
 				{
@@ -156,11 +192,8 @@
 					}
 					else
 					{
-						_firstBoolean = true;
-						if (symmetryPoints.indexOf(getSymmetry(points[i])) == -1)
-						{
-							symmetryPoints.push(getSymmetry(points[i]));
-						}
+						//_firstBoolean = true;
+						symmetryPoints.push(getSymmetry(points[i]));
 					}
 				}
 				else
@@ -172,11 +205,8 @@
 					}
 					else
 					{
-						_firstBoolean = true;
-						if (symmetryPoints.indexOf(getSymmetry(points[i])) == -1)
-						{
-							symmetryPoints.push(getSymmetry(points[i]));
-						}
+						//_firstBoolean = true;
+						symmetryPoints.push(getSymmetry(points[i]));
 					}
 				}
 			}
@@ -184,7 +214,6 @@
 			var focusPoints:Array = [];
 			for (var n:int = 0; n < points.length; n++)
 			{
-
 				var focus:Point;
 				if (n == points.length - 1)
 				{
@@ -199,6 +228,7 @@
 					focusPoints.push(focus);
 				}
 			}
+			
 			//_newPoints = [];
 			var arr1:Array = [];
 			arr1 = arr1.concat(lessPoints);
@@ -241,7 +271,7 @@
 		{
 			var sprite:Sprite = getSprite();
 			sprite.graphics.lineStyle(lineSize, lineColor);
-			sprite.graphics.beginFill(bgColor, 1);
+			sprite.graphics.beginFill(bgColor, 0.5);
 			for (var i:int = 0; i < points.length; i++)
 			{
 				if (i == 0)
@@ -292,6 +322,19 @@
 			var point:Point=new Point();
 			point.x = (2 * p.y * _K - 2 * _b * _K + p.x - _K * _K * p.x) / (1 + _K * _K);
 			point.y = p.y - (point.x - p.x) / _K;
+			if (_angle == 0)
+			{
+				if (_clickPoint.x < _movePoint.x)
+				{
+					//右
+					point.x =p.x + ((_movePoint.x + _clickPoint.x) / 2 - p.x) * 2;
+				}
+				else
+				{
+					//左
+					point.x =p.x - (p.x-(_movePoint.x + _clickPoint.x) / 2) * 2;
+				}
+			}
 			return point;
 		}
 		/**
@@ -439,19 +482,27 @@
 			//trace(k2,"k",p1,p2);
 			if (Math.abs(angle) == 90)
 			{
+				
 				y1 = y2 = _b;
 				x1 = x2 = p1.x;
 				point.x = x1;
 				point.y = _K * x1 + _b;
 			}
+			else if (_angle == 0)
+			{
+				y1 = y2=p1.y;
+				x1 = x2 = (_clickPoint.x + _movePoint.x) / 2;
+				point.x = x1;
+				point.y = y1;
+			}
 			else
 			{
+				trace(p1,p2);
 				x1 = x2 = point.x = (_b - b2) / (k2 - _K);
 				y1 = _K * point.x + _b;
 				y2 = k2 * point.x + b2;
 				point.y = y1;
 			}
-
 			//trace(point);
 			if (Math.round(x1) == Math.round(x2) && Math.round(y1) == Math.round(y2) && Math.round(point.x) >= Math.round(Math.min(p1.x,p2.x)) && Math.round(point.x) <= Math.round(Math.max(p1.x,p2.x)) && Math.round(point.y) <= Math.round(Math.max(p1.y,p2.y)) && Math.round(point.y) >= Math.round(Math.min(p1.y,p2.y)))
 			{
