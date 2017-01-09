@@ -14,7 +14,8 @@
 	{
 		private var _sprites:Array = [];//画线数组
 		private var _spritePool:Array = [];//对象池
-		private var _points:Array = [new Point(100,100),new Point(500,100),new Point(500,500),new Point(100,500)];//纸张初始点
+		private var _points:Array = [[new Point(100, 100), new Point(500, 100), new Point(500, 500), new Point(100, 500)]];//纸张初始点
+		private var _newPoints:Array = [];
 		private var _length:int = 20;//补助折线虚线单根长
 		private var _dis:int = 10;//补助折线虚线间距
 		private var _clickPoint:Point=new Point();//点击点
@@ -50,7 +51,7 @@
 				_spritePool.push(sprite);
 			}
 			//初始纸张
-			drawGraphics(_points, 0x000000, 0xffffff);
+			drawGraphics(_points[0], 0x000000, 0xffffff);
 			//生成箭头
 			_arrow = new Arrow();
 			_arrow.x = stage.mouseX;
@@ -74,14 +75,6 @@
 			_arrow.y = stage.mouseY;
 			_movePoint.x = stage.mouseX;
 			_movePoint.y = stage.mouseY;
-			if (getAngle(getCenter(_points),_clickPoint) > 0 && getAngle(_movePoint,_clickPoint ) < 0)
-			{
-				return;
-			}
-			if (getAngle(getCenter(_points),_clickPoint) <0 && getAngle(_movePoint,_clickPoint) > 0)
-			{
-				return;
-			}
 			if (getDistance(_movePoint, _lastPoint) < 10)
 			{
 				return;
@@ -101,7 +94,19 @@
 				_arrow.rotation = _angle;
 				if (_firstBoolean == false)
 				{
-					_earlyPoint= getEarlyPoint();
+					_earlyPoint = getEarlyPoint();
+				}
+				if (_angle == 90)
+				{
+					_angle = 90.001;
+				}
+				else if (_angle == 180)
+				{
+					_angle = 180.001;
+				}
+				else if (_angle == 0)
+				{
+					_angle = 0.001;
 				}
 				var radian = (_angle - 90) * Math.PI / 180;
 				_K = Math.tan(radian);
@@ -109,69 +114,103 @@
 				//折线
 				var p1:Point = new Point(_symmetryLength,_K * _symmetryLength + _b);
 				var p2:Point = new Point( -  _symmetryLength, -  _K * _symmetryLength + _b);
-				drawLine(p1, p2, 0x00CC00);
+				//drawLine(p1, p2, 0x00CC00);
 				//是可以映射
-				var symmetryPoints:Array = [];
-				var lessPoints:Array = [];
+				
 				var firstPoint:Point = new Point();
-				for (var i:int = _points.length-1; i >=0; i--)
+				var allLessPoints:Array = [];
+				var allSymmetryPoints:Array = [];
+				var symmetryPoints:Array = [];
+				for (var i:int = 0; i < _points.length; i++)
 				{
-					if (_clickPoint.y < _movePoint.y)
+					
+                    var lessPoints:Array = [];
+					for (var m:int = 0; m <_points[i].length; m++)
 					{
-						//下移
-						if (_points[i].y > _points[i].x * _K + _b)
-				        {
-						      lessPoints.push(_points[i]);
-					    }
+						if (_clickPoint.y < _movePoint.y)
+						{
+							//下移
+							if (_points[i][m].y > _points[i][m].x * _K + _b)
+							{
+								lessPoints.push(_points[i][m]);
+							}
+							else
+							{
+								_firstBoolean = true;
+								if (symmetryPoints.indexOf(getSymmetry(_points[i][m]))==-1)
+								{
+									symmetryPoints.push(getSymmetry(_points[i][m]));
+								}
+							}
+						}
 						else
 						{
-							_firstBoolean = true;
-							symmetryPoints.push(getSymmetry(_points[i]));
+							//上移
+							if (_points[i][m].y < _points[i][m].x * _K + _b)
+							{
+								lessPoints.push(_points[i][m]);
+							}
+							else
+							{
+								_firstBoolean = true;
+								if (symmetryPoints.indexOf(getSymmetry(_points[i][m]))==-1)
+								{
+									symmetryPoints.push(getSymmetry(_points[i][m]));
+								}
+							}
 						}
 					}
-					else
-					{
-						//上移
-						if (_points[i].y < _points[i].x * _K + _b)
-				        {
-						      lessPoints.push(_points[i]);
-					    }
-						else
-						{
-							_firstBoolean = true;
-							symmetryPoints.push(getSymmetry(_points[i]));
-						}
-					}
+					allLessPoints.push(lessPoints);
 				}
 				//是否有交点
-				var focusPoints:Array = [];
+				var allFocusPoints:Array = [];
 				for (var k:int = 0; k < _points.length; k++)
 				{
-					var focus:Point;
-					if (k == _points.length - 1)
+					var focusPoints:Array = [];
+					for (var n:int = 0; n < _points[k].length; n++)
 					{
-						focus = getFocus(_points[k],_points[0]);
+						var focus:Point;
+						if (n == _points[k].length - 1)
+						{
+							focus = getFocus(_points[k][n], _points[k][0]);
+						}
+						else
+						{
+							focus = getFocus(_points[k][n],_points[k][n + 1]);
+						}
+						if (focus != null)
+						{
+							focusPoints.push(focus);
+						}
 					}
-					else
-					{
-						focus = getFocus(_points[k],_points[k + 1]);
-					}
-					if (focus != null)
-					{
-						focusPoints.push(focus);
-					}
+					allFocusPoints.push(focusPoints);
 				}
-				var tempPoints:Array = [];
-			    tempPoints = tempPoints.concat(lessPoints);
-			    tempPoints = tempPoints.concat(focusPoints);;
-				focusPoints = focusPoints.concat(symmetryPoints);
-				sortPoint(tempPoints);
-				sortPoint(focusPoints);
-				
-			    this.setChildIndex(drawGraphics(tempPoints, 0x000000, 0xffffff),this.numChildren-1);
-				this.setChildIndex(drawGraphics(focusPoints, 0xff0000, 0xffffff),this.numChildren-1);
+				_newPoints = [];
+				for (var r:int = 0; r < allLessPoints.length; r++) 
+				{
+					var arr1:Array = [];
+					arr1 = arr1.concat(allLessPoints[r]);
+					arr1 = arr1.concat(allFocusPoints[r]);
+					sortPoint(arr1);
+					_newPoints.push(arr1);
+				}
+				var arr2:Array = [];
+				for (var s:int = 0; s < allFocusPoints.length; s++) 
+				{
+					arr2 = arr2.concat(allFocusPoints[s]);
+				}
+				arr2 = arr2.concat(symmetryPoints);
+				sortPoint(arr2);
+				_newPoints.push(arr2);
+				var colorArr:Array = [0x000000, 0xff0000,0xff0000,0xff0000,0xff0000,0xff0000,0xff0000,0xff0000];
+				for (var t:int = 0; t < _newPoints.length; t++) 
+				{
+					this.setChildIndex(drawGraphics(_newPoints[t], colorArr[t], 0xffffff),this.numChildren-1);
+				}
+				//this.setChildIndex(drawGraphics(tempPoints, 0x000000, 0xffffff),this.numChildren-1);
+				//this.setChildIndex(drawGraphics(focusPoints, 0xff0000, 0xffffff),this.numChildren-1);
 			}
-		}
+		}	
 		private function stageMouseDown(e:MouseEvent):void
 		{
 			_firstBoolean = false;
@@ -182,6 +221,8 @@
 		private function stageMouseUp(e:MouseEvent):void
 		{
 			//_symmetry.graphics.clear();
+			_points = [];
+			_points = _points.concat(_newPoints);
 		}
 		/**
 		 * 画图形
@@ -194,7 +235,7 @@
 		{
 			var sprite:Sprite = getSprite();
 			sprite.graphics.lineStyle(lineSize, lineColor);
-			sprite.graphics.beginFill(bgColor);
+			sprite.graphics.beginFill(bgColor,0.3);
 			for (var i:int = 0; i < points.length; i++)
 			{
 				if (i == 0)
@@ -337,7 +378,10 @@
 			var y2:Number;
 			var point:Point = new Point();
 			var k2 = Math.tan(radian);
-			var b2 = p1.y - (k2 * p2.x);
+			var b2 = p2.y - (k2 * p2.x);
+			
+			
+			//trace(k2,"k",p1,p2);
 			if (Math.abs(angle) == 90)
 			{
 				y1 = y2 = _b;
@@ -347,11 +391,13 @@
 			}
 			else
 			{
-				x1=x2=point.x = (_b - b2) / (k2 - _K);
+				x1 = x2 = point.x = (_b - b2) / (k2 - _K);
 				y1 = _K * point.x + _b;
 				y2 = k2 * point.x + b2;
 				point.y = y1;
 			}
+			
+			//trace(point);
 			if (Math.round(x1) == Math.round(x2) && Math.round(y1) == Math.round(y2) && Math.round(point.x) >= Math.round(Math.min(p1.x,p2.x)) && Math.round(point.x) <= Math.round(Math.max(p1.x,p2.x)) && Math.round(point.y) <= Math.round(Math.max(p1.y,p2.y)) && Math.round(point.y) >= Math.round(Math.min(p1.y,p2.y)))
 			{
 				return point;
@@ -363,17 +409,19 @@
 		 */
 		private function getEarlyPoint():Point
 		{
-			trace("判断所有的点");
-			var dis:Number = getDistance(new Point(stage.mouseX, stage.mouseY), _points[0]);
 			var point:Point = new Point();
-			point = _points[0];
-			for (var i:int = 1; i < _points.length; i++) 
-			{  
-				var tempDis:Number = getDistance(new Point(stage.mouseX, stage.mouseY), _points[i]);
-				if (dis > tempDis)
+			point = _points[0][0];
+			var dis:Number = getDistance(new Point(stage.mouseX,stage.mouseY),point);
+			for (var i:int = 0; i < _points.length; i++)
+			{
+				for (var j:int = 1; j < _points[i].length; j++)
 				{
-					dis = tempDis;
-					point = _points[i];
+					var tempDis:Number = getDistance(new Point(stage.mouseX, stage.mouseY), _points[i][j]);
+					if (dis > tempDis)
+					{
+						dis = tempDis;
+						point = _points[i][j];
+					}
 				}
 			}
 			return point;
