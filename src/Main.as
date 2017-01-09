@@ -14,7 +14,7 @@
 	{
 		private var _sprites:Array = [];//画线数组
 		private var _spritePool:Array = [];//对象池
-		private var _points:Array = [[new Point(100, 100), new Point(500, 100), new Point(500, 500), new Point(100, 500)]];//纸张初始点
+		private var _points:Array = [[new Point(100,100),new Point(500,100),new Point(500,500),new Point(100,500)]];//纸张初始点
 		private var _newPoints:Array = [];
 		private var _length:int = 20;//补助折线虚线单根长
 		private var _dis:int = 10;//补助折线虚线间距
@@ -39,12 +39,11 @@
 				addEventListener(Event.ADDED_TO_STAGE, init);
 			}
 		}
-
 		private function init(e:Event = null):void
 		{
 			removeEventListener(Event.ADDED_TO_STAGE, init);
 			//预先创建sprite对象池
-			for (var i:int = 0; i < 20; i++)
+			for (var i:int = 0; i < 2000; i++)
 			{
 				var sprite:Sprite = new Sprite();
 				addChild(sprite);
@@ -116,198 +115,108 @@
 				var p2:Point = new Point( -  _symmetryLength, -  _K * _symmetryLength + _b);
 				//drawLine(p1, p2, 0x00CC00);
 				//是可以映射
-				
-				var firstPoint:Point = new Point();
-				var allLessPoints:Array = [];
-				var allSymmetryPoints:Array = [];
-				var symmetryPoints:Array = [];
-				for (var i:int = 0; i < _points.length; i++)
-				{
-					
-                    var lessPoints:Array = [];
-					for (var m:int = 0; m <_points[i].length; m++)
-					{
-						if (_clickPoint.y < _movePoint.y)
-						{
-							//下移
-							if (_points[i][m].y > _points[i][m].x * _K + _b)
-							{
-								lessPoints.push(_points[i][m]);
-							}
-							else
-							{
-								_firstBoolean = true;
-								if (symmetryPoints.indexOf(getSymmetry(_points[i][m]))==-1)
-								{
-									symmetryPoints.push(getSymmetry(_points[i][m]));
-								}
-							}
-						}
-						else
-						{
-							//上移
-							if (_points[i][m].y < _points[i][m].x * _K + _b)
-							{
-								lessPoints.push(_points[i][m]);
-							}
-							else
-							{
-								_firstBoolean = true;
-								if (symmetryPoints.indexOf(getSymmetry(_points[i][m]))==-1)
-								{
-									symmetryPoints.push(getSymmetry(_points[i][m]));
-								}
-							}
-						}
-					}
-					allLessPoints.push(lessPoints);
-				}
-				//是否有交点
-				var allFocusPoints:Array = [];
-				for (var k:int = 0; k < _points.length; k++)
-				{
-					var focusPoints:Array = [];
-					for (var n:int = 0; n < _points[k].length; n++)
-					{
-						var focus:Point;
-						if (n == _points[k].length - 1)
-						{
-							focus = getFocus(_points[k][n], _points[k][0]);
-						}
-						else
-						{
-							focus = getFocus(_points[k][n],_points[k][n + 1]);
-						}
-						if (focus != null)
-						{
-							focusPoints.push(focus);
-						}
-					}
-					allFocusPoints.push(focusPoints);
-				}
 				_newPoints = [];
-				for (var r:int = 0; r < allLessPoints.length; r++) 
+				for (var l:int = _points.length-1; l >=0; l--)
 				{
-					var arr1:Array = [];
-					arr1 = arr1.concat(allLessPoints[r]);
-					arr1 = arr1.concat(allFocusPoints[r]);
-					sortPoint(arr1);
-					_newPoints.push(arr1);
+					countDraw(_points[l]);
 				}
-				var arr2:Array = [];
-				for (var s:int = 0; s < allFocusPoints.length; s++) 
+				var color:int = 0x000000;
+				for (var w:int = 0; w < _newPoints.length; w++)
 				{
-					arr2 = arr2.concat(allFocusPoints[s]);
+					if (w == 0)
+					{
+						color = 0x000000;
+					}
+					else
+					{
+						color = 0xff0000;
+					}
+					this.setChildIndex(drawGraphics(_newPoints[w], color, 0xffffff),this.numChildren-1);
 				}
-				
-				arr2 = arr2.concat(symmetryPoints);
-				sortPoint(arr2);
-				_newPoints.push(arr2);
-				var colorArr:Array = [0x000000, 0xff0000,0xff0000,0xff0000,0xff0000,0xff0000,0xff0000,0xff0000];
-				for (var t:int = 0; t < _newPoints.length; t++) 
-				{
-					this.setChildIndex(drawGraphics(_newPoints[t], colorArr[t], 0xffffff),this.numChildren-1);
-				}
-				
-				
-				//this.setChildIndex(drawGraphics(tempPoints, 0x000000, 0xffffff),this.numChildren-1);
-				//this.setChildIndex(drawGraphics(focusPoints, 0xff0000, 0xffffff),this.numChildren-1);
 			}
 		}
-		
+		/**
+		 * 计算画线
+		 * @param	points
+		 */
 		private function countDraw(points:Array)
 		{
-				var symmetryPoints:Array = [];
-				var lessPoints:Array = [];
-				for (var i:int = 0; i < points.length; i++)
-				{
-					
-                    
+			var symmetryPoints:Array = [];
+			var lessPoints:Array = [];
+			for (var i:int = 0; i < points.length; i++)
+			{
+
+
 				if (_clickPoint.y < _movePoint.y)
-						{
-							//下移
-							if (points[i].y > points[i].x * _K + _b)
-							{
-								lessPoints.push(_points[i][m]);
-							}
-							else
-							{
-								_firstBoolean = true;
-								if (symmetryPoints.indexOf(getSymmetry(_points[i][m]))==-1)
-								{
-									symmetryPoints.push(getSymmetry(_points[i][m]));
-								}
-							}
-						}
-						else
-						{
-							//上移
-							if (_points[i][m].y < _points[i][m].x * _K + _b)
-							{
-								lessPoints.push(_points[i][m]);
-							}
-							else
-							{
-								_firstBoolean = true;
-								if (symmetryPoints.indexOf(getSymmetry(_points[i][m]))==-1)
-								{
-									symmetryPoints.push(getSymmetry(_points[i][m]));
-								}
-							}
-						}
-				}
-				//是否有交点
-				var allFocusPoints:Array = [];
-				for (var k:int = 0; k < _points.length; k++)
 				{
-					var focusPoints:Array = [];
-					for (var n:int = 0; n < _points[k].length; n++)
+					//下移
+					if (points[i].y > points[i].x * _K + _b)
 					{
-						var focus:Point;
-						if (n == _points[k].length - 1)
+						lessPoints.push(points[i]);
+					}
+					else
+					{
+						_firstBoolean = true;
+						if (symmetryPoints.indexOf(getSymmetry(points[i])) == -1)
 						{
-							focus = getFocus(_points[k][n], _points[k][0]);
-						}
-						else
-						{
-							focus = getFocus(_points[k][n],_points[k][n + 1]);
-						}
-						if (focus != null)
-						{
-							focusPoints.push(focus);
+							symmetryPoints.push(getSymmetry(points[i]));
 						}
 					}
-					allFocusPoints.push(focusPoints);
 				}
-				_newPoints = [];
-				for (var r:int = 0; r < allLessPoints.length; r++) 
+				else
 				{
-					var arr1:Array = [];
-					arr1 = arr1.concat(allLessPoints[r]);
-					arr1 = arr1.concat(allFocusPoints[r]);
-					sortPoint(arr1);
-					_newPoints.push(arr1);
+					//上移
+					if (points[i].y < points[i].x * _K + _b)
+					{
+						lessPoints.push(points[i]);
+					}
+					else
+					{
+						_firstBoolean = true;
+						if (symmetryPoints.indexOf(getSymmetry(points[i])) == -1)
+						{
+							symmetryPoints.push(getSymmetry(points[i]));
+						}
+					}
 				}
-				var arr2:Array = [];
-				for (var s:int = 0; s < allFocusPoints.length; s++) 
+			}
+			//是否有交点
+			var focusPoints:Array = [];
+			for (var n:int = 0; n < points.length; n++)
+			{
+
+				var focus:Point;
+				if (n == points.length - 1)
 				{
-					arr2 = arr2.concat(allFocusPoints[s]);
+					focus = getFocus(points[n],points[0]);
 				}
-				
-				arr2 = arr2.concat(symmetryPoints);
-				sortPoint(arr2);
+				else
+				{
+					focus = getFocus(points[n],points[n + 1]);
+				}
+				if (focus != null)
+				{
+					focusPoints.push(focus);
+				}
+			}
+			//_newPoints = [];
+			var arr1:Array = [];
+			arr1 = arr1.concat(lessPoints);
+			arr1 = arr1.concat(focusPoints);
+			sortPoint(arr1);
+			if (arr1.length != 0)
+			{
+			   _newPoints.unshift(arr1);
+			}
+			var arr2:Array = [];
+			arr2 = arr2.concat(focusPoints);
+			arr2 = arr2.concat(symmetryPoints);
+			sortPoint(arr2);
+			if  (arr2.length != 0)
+			{
 				_newPoints.push(arr2);
-				var colorArr:Array = [0x000000, 0xff0000,0xff0000,0xff0000,0xff0000,0xff0000,0xff0000,0xff0000];
-				for (var t:int = 0; t < _newPoints.length; t++) 
-				{
-					this.setChildIndex(drawGraphics(_newPoints[t], colorArr[t], 0xffffff),this.numChildren-1);
-				}
+			}
 		}
-		
-		
-		
-		
-		
 		private function stageMouseDown(e:MouseEvent):void
 		{
 			_firstBoolean = false;
@@ -332,7 +241,7 @@
 		{
 			var sprite:Sprite = getSprite();
 			sprite.graphics.lineStyle(lineSize, lineColor);
-			sprite.graphics.beginFill(bgColor,0.3);
+			sprite.graphics.beginFill(bgColor, 1);
 			for (var i:int = 0; i < points.length; i++)
 			{
 				if (i == 0)
@@ -443,63 +352,55 @@
 				}
 			}
 		}
-		
-		
-		
+
 		/**
- * @description 射线法判断点是否在多边形内部
- * @param {Object} p 待判断的点，格式：{ x: X 坐标, y: Y 坐标 }
- * @param {Array} poly 多边形顶点，数组成员的格式同 p
- * @return {String} 点 p 和多边形 poly 的几何关系
- */
- private  function rayCasting(p, poly) {
-  var px = p.x,
-      py = p.y,
-      flag = false
+		 * @description 射线法判断点是否在多边形内部
+		 * @param {Object} p 待判断的点，格式：{ x: X 坐标, y: Y 坐标 }
+		 * @param {Array} poly 多边形顶点，数组成员的格式同 p
+		 * @return {String} 点 p 和多边形 poly 的几何关系
+		 */
+		private function rayCasting(p, poly)
+		{
+			var px = p.x,
+			      py = p.y,
+			      flag = false;
 
-  for(var i = 0, l = poly.length, j = l - 1; i < l; j = i, i++) {
-    var sx = poly[i].x,
-        sy = poly[i].y,
-        tx = poly[j].x,
-        ty = poly[j].y
+			for (var i = 0, l = poly.length, j = l - 1; i < l; j = i, i++)
+			{
+				var sx = poly[i].x,
+				        sy = poly[i].y,
+				        tx = poly[j].x,
+				        ty = poly[j].y;
 
-    // 点与多边形顶点重合
-    if((sx === px && sy === py) || (tx === px && ty === py)) {
-      return 'on'
-    }
+				// 点与多边形顶点重合
+				if ((sx === px && sy === py) || (tx === px && ty === py))
+				{
+					return 'on';
+				}
 
-    // 判断线段两端点是否在射线两侧
-    if((sy < py && ty >= py) || (sy >= py && ty < py)) {
-      // 线段上与射线 Y 坐标相同的点的 X 坐标
-      var x = sx + (py - sy) * (tx - sx) / (ty - sy)
+				// 判断线段两端点是否在射线两侧
+				if ((sy < py && ty >= py) || (sy >= py && ty < py))
+				{
+					// 线段上与射线 Y 坐标相同的点的 X 坐标
+					var x = sx + (py - sy) * (tx - sx) / (ty - sy);
 
-      // 点在多边形的边上
-      if(x === px) {
-        return 'on'
-      }
+					// 点在多边形的边上
+					if (x === px)
+					{
+						return 'on';
+					}
 
-      // 射线穿过多边形的边界
-      if(x > px) {
-        flag = !flag
-      }
-    }
-  }
-  // 射线穿过多边形边界的次数为奇数时点在多边形内
-  return flag ? 'in' : 'out'
-}
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+					// 射线穿过多边形的边界
+					if (x > px)
+					{
+						flag = ! flag;
+					}
+				}
+			}
+			// 射线穿过多边形边界的次数为奇数时点在多边形内
+			return flag ? 'in' : 'out';
+		}
+
 		/**
 		 * 获取重心
 		 * @return
@@ -533,8 +434,8 @@
 			var point:Point = new Point();
 			var k2 = Math.tan(radian);
 			var b2 = p2.y - (k2 * p2.x);
-			
-			
+
+
 			//trace(k2,"k",p1,p2);
 			if (Math.abs(angle) == 90)
 			{
@@ -550,7 +451,7 @@
 				y2 = k2 * point.x + b2;
 				point.y = y1;
 			}
-			
+
 			//trace(point);
 			if (Math.round(x1) == Math.round(x2) && Math.round(y1) == Math.round(y2) && Math.round(point.x) >= Math.round(Math.min(p1.x,p2.x)) && Math.round(point.x) <= Math.round(Math.max(p1.x,p2.x)) && Math.round(point.y) <= Math.round(Math.max(p1.y,p2.y)) && Math.round(point.y) >= Math.round(Math.min(p1.y,p2.y)))
 			{
@@ -570,7 +471,7 @@
 			{
 				for (var j:int = 1; j < _points[i].length; j++)
 				{
-					var tempDis:Number = getDistance(new Point(stage.mouseX, stage.mouseY), _points[i][j]);
+					var tempDis:Number = getDistance(new Point(stage.mouseX,stage.mouseY),_points[i][j]);
 					if (dis > tempDis)
 					{
 						dis = tempDis;
