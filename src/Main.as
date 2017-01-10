@@ -13,7 +13,8 @@
 	{
 		private var _sprites:Array = [];//画线数组
 		private var _spritePool:Array = [];//对象池
-		private var _points:Array = [[new Point(100,100),new Point(500,100),new Point(500,500),new Point(100,500)]];//纸张初始点
+		private var _inItPoints:Array = [[new Point(100, 100), new Point(500, 100), new Point(500, 500), new Point(100, 500)]];//纸张初始点
+		private var _points:Array = [];
 		private var _newPoints:Array = [];
 		private var _length:int = 20;//补助折线虚线单根长
 		private var _dis:int = 10;//补助折线虚线间距
@@ -28,6 +29,9 @@
 		private var _firstBoolean:Boolean = false;//离最近的点可对称
 		private var _earlyPoint:Point = new Point();
 		private var _isOut:Boolean = false;//是否点在纸内
+		private var _allPointsCenter:Point = new Point();//所有点重心
+		private var _centerClickDis:Number = 0;//重心和点击点距离
+		private var _existInitPoint:Boolean = true;//是否存在最原始的点用来是否填充正面纸
 		public function Main()
 		{
 			if (stage)
@@ -42,6 +46,8 @@
 		private function init(e:Event = null):void
 		{
 			removeEventListener(Event.ADDED_TO_STAGE, init);
+			_points = _points.concat(_inItPoints);
+			_existInitPoint = true;
 			//预先创建sprite对象池
 			for (var i:int = 0; i < 100; i++)
 			{
@@ -89,11 +95,16 @@
 					_spritePool.push(_sprites[j]);
 				}
 				_sprites = [];
-				_angle = getAngle(_clickPoint,_movePoint);
+				_angle = getAngle(_clickPoint, _movePoint);
+				if (IsEffective() == false)
+			    {
+					//_movePoint = _clickPoint ;
+					//_angle = getAngle(_clickPoint, _allPointsCenter);
+			     }
 				//_arrow.rotation = _angle;
 				if (_firstBoolean == false)
 				{
-					_earlyPoint = getEarlyPoint();
+					//_earlyPoint = getEarlyPoint();
 					_firstBoolean = true;
 				}
 				var radian = (_angle - 90) * Math.PI / 180;
@@ -119,18 +130,42 @@
 				{
 					countDraw(_points[l]);
 				}
+				
+				
+				if (_existInitPoint)
+				{
+				
+				if (_newPoints.length != 0)
+				{
+					_existInitPoint = false;
+				}
+				for (l = _newPoints.length-1; l >=0; l--)
+				{
+					
+					for ( var n:int = 0; n < _newPoints[l].length; n++ )
+					{
+						
+						for (var m:int = 0; m < _inItPoints[0].length; m++ )
+						{
+							if (_newPoints[l][n].x == _inItPoints[0][m].x && _newPoints[l][n].x == _inItPoints[0][m].x)
+							{
+								_existInitPoint = true;
+								break;
+							}
+						}
+					}
+					if (_existInitPoint)
+					{
+						break;
+					}
+				}
+				}
+				
 				var color:int = 0x000000;
 				for (var w:int = 0; w < _newPoints.length; w++)
 				{
-					if (w == 0)
-					{
-						color = 0x000000;
-					}
-					else
-					{
-						color = 0xff0000;
-					}
-					if (_newPoints.length == 1)
+					color = 0xff0000;//红
+					if (_newPoints.length - 1 == w && _existInitPoint)
 					{
 						color = 0x000000;
 					}
@@ -225,6 +260,10 @@
 				_newPoints.push(arr2);
 			}
 		}
+		/**
+		 * 鼠标按下
+		 * @param	e
+		 */
 		private function stageMouseDown(e:MouseEvent):void
 		{
 			_firstBoolean = false;
@@ -239,7 +278,13 @@
 					_isOut = false;
 				}
 			}
+			GetAllPointsCenter();
+			_centerClickDis = Math.sqrt((_clickPoint.x - _allPointsCenter.x) * (_clickPoint.x - _allPointsCenter.x) + (_clickPoint.y - _allPointsCenter.y) * (_clickPoint.y - _allPointsCenter.y));
 		}
+		/**
+		 * 鼠标弹起
+		 * @param	e
+		 */
 		private function stageMouseUp(e:MouseEvent):void
 		{
 			if (_isOut)
@@ -420,7 +465,7 @@
 				// 点与多边形顶点重合
 				if ((sx === px && sy === py) || (tx === px && ty === py))
 				{
-					return "in";
+					return "out";
 					//return "on";
 				}
 				// 判断线段两端点是否在射线两侧
@@ -460,6 +505,92 @@
 			center.x = center.x / points.length;
 			center.y = center.y / points.length;
 			return center;
+		}
+		/**
+		 * 所有点重心
+		 */
+		private function GetAllPointsCenter()
+		{
+			_allPointsCenter.x = 0;
+			_allPointsCenter.y = 0;
+			var center:Point = new Point();
+			for (var i:int = 0; i < _points.length; i++) 
+			{
+				center = getCenter(_points[i]);
+				_allPointsCenter.x += center.x;
+				_allPointsCenter.y += center.y;
+			}
+			_allPointsCenter.x = _allPointsCenter.x / _points.length;
+			_allPointsCenter.y = _allPointsCenter.y / _points.length;
+		}
+		/**
+		 * 移动点是否有效 
+		 */
+		private function IsEffective():Boolean
+		{
+			if (Math.abs(_lastPoint.x - _movePoint.x) > Math.abs(_lastPoint.y - _movePoint.y))
+			{
+				/* 水平移动*/
+				if (_lastPoint.x < _movePoint.x)
+				{
+					//左移
+					if (_allPointsCenter.x < _clickPoint.x)
+					{
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}
+				else
+				{
+					//右移
+					if (_allPointsCenter.x > _clickPoint.x)
+					{
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}
+			}
+			else 
+			{
+				//竖直移动
+				if (_lastPoint.y < _movePoint.y)
+				{
+					//上移
+					if (_allPointsCenter.y < _clickPoint.y)
+					{
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}
+				else
+				{
+					//下移
+					if (_allPointsCenter.y > _clickPoint.y)
+					{
+						return true;
+					}
+					else
+					{
+						return false;
+					}
+				}
+			}
+			return false;
+			var dis:Number = Math.sqrt((_movePoint.x - _allPointsCenter.x) * (_movePoint.x - _allPointsCenter.x) + (_movePoint.y - _allPointsCenter.y) * (_movePoint.y - _allPointsCenter.y));
+			if (dis < _centerClickDis)
+			{
+				return true;
+			}
+			return false;
 		}
 		/**
 		 * 获取折线与线段的交点
