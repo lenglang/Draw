@@ -130,42 +130,11 @@
 				{
 					countDraw(_points[l]);
 				}
-				
-				
-				if (_existInitPoint)
-				{
-				
-				if (_newPoints.length != 0)
-				{
-					_existInitPoint = false;
-				}
-				for (l = _newPoints.length-1; l >=0; l--)
-				{
-					
-					for ( var n:int = 0; n < _newPoints[l].length; n++ )
-					{
-						
-						for (var m:int = 0; m < _inItPoints[0].length; m++ )
-						{
-							if (_newPoints[l][n].x == _inItPoints[0][m].x && _newPoints[l][n].x == _inItPoints[0][m].x)
-							{
-								_existInitPoint = true;
-								break;
-							}
-						}
-					}
-					if (_existInitPoint)
-					{
-						break;
-					}
-				}
-				}
-				
 				var color:int = 0x000000;
 				for (var w:int = 0; w < _newPoints.length; w++)
 				{
 					color = 0xff0000;//红
-					if (_newPoints.length - 1 == w && _existInitPoint)
+					if (w==0 && _existInitPoint)
 					{
 						color = 0x000000;
 					}
@@ -251,6 +220,10 @@
 			{
 			   _newPoints.unshift(arr1);
 			}
+			else if (_existInitPoint)
+			{
+				_existInitPoint = false;
+			}
 			var arr2:Array = [];
 			arr2 = arr2.concat(focusPoints);
 			arr2 = arr2.concat(symmetryPoints);
@@ -258,6 +231,7 @@
 			if  (arr2.length != 0)
 			{
 				_newPoints.push(arr2);
+				
 			}
 		}
 		/**
