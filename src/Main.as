@@ -5,7 +5,6 @@
 	import flash.events.Event;
 	import flash.events.MouseEvent;
 	import flash.geom.Point;
-
 	/**
 	 * ...
 	 * @author lenglang
@@ -43,7 +42,7 @@
 		{
 			removeEventListener(Event.ADDED_TO_STAGE, init);
 			//预先创建sprite对象池
-			for (var i:int = 0; i < 2000; i++)
+			for (var i:int = 0; i < 100; i++)
 			{
 				var sprite:Sprite = new Sprite();
 				addChild(sprite);
@@ -96,26 +95,6 @@
 					_earlyPoint = getEarlyPoint();
 					_firstBoolean = true;
 				}
-				if (_angle == 90)
-				{
-					_angle = 90.001;
-				}
-				else if (_angle == 180)
-				{
-					_angle = 180.001;
-				}
-				else if (_angle == -180)
-				{
-					_angle = -180.001;
-				}
-				else if (_angle == 0)
-				{
-					
-				}
-				if (_angle == -90)
-				{
-					_angle = -90.001;
-				}
 				var radian = (_angle - 90) * Math.PI / 180;
 				_K = Math.tan(radian);
 				//之前是以最近的点最为参照
@@ -123,16 +102,16 @@
 				//折线
 				var p1:Point = new Point(_symmetryLength,_K * _symmetryLength + _b);
 				var p2:Point = new Point( -  _symmetryLength, -  _K * _symmetryLength + _b);
-				if (_angle == 0)
+				if (_angle == 0||_angle == 180)
 				{
+					//折线垂直
 					p1.x =(_clickPoint.x + _movePoint.x) / 2;
 					p1.y = _symmetryLength;
 					
 					p2.x = (_clickPoint.x + _movePoint.x) / 2;
 					p2.y = -_symmetryLength;
-					
 				}
-				drawLine(p1, p2, 0x00CC00);
+				//drawLine(p1, p2, 0x00CC00);
 				//是可以映射
 				_newPoints = [];
 				for (var l:int = _points.length-1; l >=0; l--)
@@ -168,7 +147,7 @@
 			var lessPoints:Array = [];
 			for (var i:int = 0; i < points.length; i++)
 			{
-				if (_angle == 0)
+				if (_angle == 0||_angle == 180)
 				{
 					//右移
 					if (_clickPoint.x < _movePoint.x&&points[i].x<(_clickPoint.x+_movePoint.x)/2)
@@ -228,8 +207,6 @@
 					focusPoints.push(focus);
 				}
 			}
-			
-			//_newPoints = [];
 			var arr1:Array = [];
 			arr1 = arr1.concat(lessPoints);
 			arr1 = arr1.concat(focusPoints);
@@ -256,7 +233,6 @@
 		}
 		private function stageMouseUp(e:MouseEvent):void
 		{
-			//_symmetry.graphics.clear();
 			_points = [];
 			_points = _points.concat(_newPoints);
 		}
@@ -312,6 +288,13 @@
 				_sprites.push(temp);
 				return temp;
 			}
+			else
+			{
+				var sprite:Sprite = new Sprite();
+				this.addChild(sprite);
+				_sprites.push(sprite);
+				return sprite;
+			}
 			return null;
 		}
 		/**
@@ -322,7 +305,7 @@
 			var point:Point=new Point();
 			point.x = (2 * p.y * _K - 2 * _b * _K + p.x - _K * _K * p.x) / (1 + _K * _K);
 			point.y = p.y - (point.x - p.x) / _K;
-			if (_angle == 0)
+			if (_angle == 0||_angle == 180)
 			{
 				if (_clickPoint.x < _movePoint.x)
 				{
@@ -334,6 +317,16 @@
 					//左
 					point.x =p.x - (p.x-(_movePoint.x + _clickPoint.x) / 2) * 2;
 				}
+			}
+			else if (_angle == 90)
+			{
+				//下移
+				point.y =p.y + ((_movePoint.y + _clickPoint.y) / 2 - p.y) * 2;
+			}
+			else if (_angle ==-90)
+			{
+				//上移
+				point.y =p.y - (p.y-(_movePoint.y + _clickPoint.y) / 2) * 2;
 			}
 			return point;
 		}
@@ -395,7 +388,6 @@
 				}
 			}
 		}
-
 		/**
 		 * @description 射线法判断点是否在多边形内部
 		 * @param {Object} p 待判断的点，格式：{ x: X 坐标, y: Y 坐标 }
@@ -405,22 +397,19 @@
 		private function rayCasting(p, poly)
 		{
 			var px = p.x,
-			      py = p.y,
-			      flag = false;
-
+			    py = p.y,
+			    flag = false;
 			for (var i = 0, l = poly.length, j = l - 1; i < l; j = i, i++)
 			{
 				var sx = poly[i].x,
-				        sy = poly[i].y,
-				        tx = poly[j].x,
-				        ty = poly[j].y;
-
+				    sy = poly[i].y,
+				    tx = poly[j].x,
+				    ty = poly[j].y;
 				// 点与多边形顶点重合
 				if ((sx === px && sy === py) || (tx === px && ty === py))
 				{
 					return 'on';
 				}
-
 				// 判断线段两端点是否在射线两侧
 				if ((sy < py && ty >= py) || (sy >= py && ty < py))
 				{
@@ -432,7 +421,6 @@
 					{
 						return 'on';
 					}
-
 					// 射线穿过多边形的边界
 					if (x > px)
 					{
@@ -443,7 +431,6 @@
 			// 射线穿过多边形边界的次数为奇数时点在多边形内
 			return flag ? 'in' : 'out';
 		}
-
 		/**
 		 * 获取重心
 		 * @return
@@ -477,33 +464,67 @@
 			var point:Point = new Point();
 			var k2 = Math.tan(radian);
 			var b2 = p2.y - (k2 * p2.x);
-
-
-			//trace(k2,"k",p1,p2);
-			if (Math.abs(angle) == 90)
+			if (_angle == 0||_angle == 180)
 			{
-				
-				y1 = y2 = _b;
-				x1 = x2 = p1.x;
+				if (p1.x == p2.x)
+				{
+					return null;
+				}
+				if (p1.y == p2.y)
+				{
+					y1 = y2=p1.y;
+				    x1 = x2 = (_clickPoint.x + _movePoint.x) / 2;
+				}
+				else
+				{
+					x1 = x2 =	(_clickPoint.x + _movePoint.x) / 2;
+					y1 = y2 = k2 * x1 + b2;
+				}
 				point.x = x1;
-				point.y = _K * x1 + _b;
+				point.y = y1;
 			}
-			else if (_angle == 0)
+			else if (_angle == 90||_angle==-90)
 			{
-				y1 = y2=p1.y;
-				x1 = x2 = (_clickPoint.x + _movePoint.x) / 2;
+				if (p1.y == p2.y)
+				{
+					return null;
+				}
+				if (p1.x == p2.x)
+				{
+				    x1 = x2 = p1.x
+					y1 = y2=(_clickPoint.y + _movePoint.y) / 2;
+				}
+				else
+				{
+					y1 = y2 = (_clickPoint.y + _movePoint.y) / 2;
+					x1 = x2 = (y1 - b2) / k2;
+				}
 				point.x = x1;
 				point.y = y1;
 			}
 			else
 			{
-				trace(p1,p2);
-				x1 = x2 = point.x = (_b - b2) / (k2 - _K);
-				y1 = _K * point.x + _b;
-				y2 = k2 * point.x + b2;
+				if (p1.x == p2.x)
+				{
+					//垂直
+					x1 = x2 = p1.x;
+					y1 = y2 = x1 * _K + _b;
+				}
+				else if (p1.y == p2.y)
+				{
+					//水平
+					y1 = y2 = p1.y;
+					x1 = x2 = (y1 - _b) / _K;
+				}
+				else
+				{
+					x1 = x2 = point.x = (_b - b2) / (k2 - _K);
+				    y1 = _K * point.x + _b;
+				    y2 = k2 * point.x + b2;
+				}
+				point.x = x1;
 				point.y = y1;
 			}
-			//trace(point);
 			if (Math.round(x1) == Math.round(x2) && Math.round(y1) == Math.round(y2) && Math.round(point.x) >= Math.round(Math.min(p1.x,p2.x)) && Math.round(point.x) <= Math.round(Math.max(p1.x,p2.x)) && Math.round(point.y) <= Math.round(Math.max(p1.y,p2.y)) && Math.round(point.y) >= Math.round(Math.min(p1.y,p2.y)))
 			{
 				return point;
