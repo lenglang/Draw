@@ -27,6 +27,7 @@
 		private var _angle:Number = 0;//角度
 		private var _firstBoolean:Boolean = false;//离最近的点可对称
 		private var _earlyPoint:Point = new Point();
+		private var _isOut:Boolean = false;//是否点在纸内
 		public function Main()
 		{
 			if (stage)
@@ -79,7 +80,7 @@
 			}
 			_lastPoint.x = stage.mouseX;
 			_lastPoint.y = stage.mouseY;
-			if (e.buttonDown)
+			if (e.buttonDown&&_isOut)
 			{
 				//清空线
 				for (var j:int = 0; j < _sprites.length; j++)
@@ -229,12 +230,23 @@
 			_firstBoolean = false;
 			_movePoint = new Point(stage.mouseX,stage.mouseY);
 			_lastPoint = new Point(stage.mouseX,stage.mouseY);
-			_clickPoint = new Point(stage.mouseX,stage.mouseY);
+			_clickPoint = new Point(stage.mouseX, stage.mouseY);
+			_isOut = true;
+			for (var i:int = 0; i < _points.length; i++) 
+			{
+				if (rayCasting(_clickPoint, _points[i]) == "in")
+				{
+					_isOut = false;
+				}
+			}
 		}
 		private function stageMouseUp(e:MouseEvent):void
 		{
-			_points = [];
-			_points = _points.concat(_newPoints);
+			if (_isOut)
+			{
+				_points = [];
+			    _points = _points.concat(_newPoints);
+			}
 		}
 		/**
 		 * 画图形
@@ -408,7 +420,8 @@
 				// 点与多边形顶点重合
 				if ((sx === px && sy === py) || (tx === px && ty === py))
 				{
-					return 'on';
+					return "in";
+					//return "on";
 				}
 				// 判断线段两端点是否在射线两侧
 				if ((sy < py && ty >= py) || (sy >= py && ty < py))
@@ -419,7 +432,8 @@
 					// 点在多边形的边上
 					if (x === px)
 					{
-						return 'on';
+						return "in";
+						//return "on";
 					}
 					// 射线穿过多边形的边界
 					if (x > px)
@@ -429,7 +443,7 @@
 				}
 			}
 			// 射线穿过多边形边界的次数为奇数时点在多边形内
-			return flag ? 'in' : 'out';
+			return flag ? "in" : "out";
 		}
 		/**
 		 * 获取重心
