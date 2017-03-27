@@ -109,6 +109,7 @@
 				}
 				var radian = (_angle - 90) * Math.PI / 180;
 				_K = Math.tan(radian);
+				trace(_K);
 				//之前是以最近的点最为参照
 				_b = (_clickPoint.y + _movePoint.y) / 2 - (_K * (_movePoint.x + _clickPoint.x) / 2);
 				//折线
@@ -123,7 +124,7 @@
 					p2.x = (_clickPoint.x + _movePoint.x) / 2;
 					p2.y = -_symmetryLength;
 				}
-				//drawLine(p1, p2, 0x00CC00);
+				drawLine(p1, p2, 0x00CC00);
 				//是可以映射
 				_newPoints = [];
 				for (var l:int = _points.length-1; l >=0; l--)
